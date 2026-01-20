@@ -1,0 +1,93 @@
+name: sdd-localstack
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sdd-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sdd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sdd_password}
+      POSTGRES_DB: ${POSTGRES_DB:-sdd}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.data/pgdata:/var/lib/postgresql/data
+      - ./scripts/00_pgvector.sql:/docker-entrypoint-initdb.d/00_pgvector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: sdd-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./.data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  adminer:
+    image: adminer:latest
+    container_name: sdd-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  dev:
+    build:
+      context: .
+      dockerfile: .docker/dev.Dockerfile
+    container_name: sdd-dev
+    restart: unless-stopped
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:cached
+      # Persistencia local (NO commitear)
+      - ./.local/claude:/home/dev/.claude
+      - ./.local/opencode:/home/dev/.config/opencode
+      - ./.local/cache:/home/dev/.cache
+      - ./.local/specify:/home/dev/.specify
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sdd}:${POSTGRES_PASSWORD:-sdd_password}@postgres:5432/${POSTGRES_DB:-sdd}
+      REDIS_URL: redis://redis:6379/0
+      # Para tooling
+      CI: "false"
+      PYTHONUNBUFFERED: "1"
+      # Auditoría
+      AUDIT_LOG_LEVEL: ${AUDIT_LOG_LEVEL:-INFO}
+      AUDIT_DB_ENABLED: ${AUDIT_DB_ENABLED:-true}
+      # HITL
+      HITL_ENABLED: ${HITL_ENABLED:-true}
+      HITL_PROVIDER: ${HITL_PROVIDER:-humanlayer}
+      HITL_WEBHOOK_URL: ${HITL_WEBHOOK_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    tty: true
+    stdin_open: true
+    command: sleep infinity
+
+  # Opcional: LLM local (perfil)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sdd-ollama
+    profiles: ["local-llm"]
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./.data/ollama:/root/.ollama
