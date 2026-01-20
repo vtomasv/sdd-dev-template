@@ -1,0 +1,109 @@
+{
+  "name": "Spec Generation Workflow",
+  "description": "Generate technical specification from user requirements with HITL approval",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "Prompt",
+      "data": {
+        "label": "Requirements Input",
+        "template": "User requirements:\n{{requirements}}\n\nGenerate a comprehensive technical specification following SDD best practices."
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "spec-agent",
+      "type": "SubAgent",
+      "data": {
+        "label": "Spec Agent",
+        "agentPath": ".claude/agents/spec-agent.md",
+        "systemPrompt": "You are a technical specification expert. Generate detailed specs with functional and non-functional requirements."
+      },
+      "position": { "x": 100, "y": 250 }
+    },
+    {
+      "id": "hitl-approval",
+      "type": "AskUserQuestion",
+      "data": {
+        "label": "HITL: Approve Spec?",
+        "question": "Review the generated specification. Do you approve it?",
+        "options": ["Approve", "Request Changes", "Reject"]
+      },
+      "position": { "x": 100, "y": 400 }
+    },
+    {
+      "id": "approved-branch",
+      "type": "SubAgent",
+      "data": {
+        "label": "Save Spec",
+        "agentPath": ".claude/agents/spec-agent.md",
+        "systemPrompt": "Save the approved specification to .specify/specs/ directory."
+      },
+      "position": { "x": 100, "y": 550 }
+    },
+    {
+      "id": "changes-branch",
+      "type": "SubAgent",
+      "data": {
+        "label": "Refine Spec",
+        "agentPath": ".claude/agents/spec-agent.md",
+        "systemPrompt": "Refine the specification based on user feedback."
+      },
+      "position": { "x": 350, "y": 550 }
+    },
+    {
+      "id": "audit-log",
+      "type": "Skill",
+      "data": {
+        "label": "Log Decision",
+        "skillName": "audit_logger",
+        "parameters": {
+          "agent_name": "spec_agent",
+          "action": "spec_generation",
+          "decision": "{{approval_status}}"
+        }
+      },
+      "position": { "x": 100, "y": 700 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "spec-agent"
+    },
+    {
+      "id": "e2",
+      "source": "spec-agent",
+      "target": "hitl-approval"
+    },
+    {
+      "id": "e3",
+      "source": "hitl-approval",
+      "target": "approved-branch",
+      "condition": "option === 'Approve'"
+    },
+    {
+      "id": "e4",
+      "source": "hitl-approval",
+      "target": "changes-branch",
+      "condition": "option === 'Request Changes'"
+    },
+    {
+      "id": "e5",
+      "source": "changes-branch",
+      "target": "hitl-approval"
+    },
+    {
+      "id": "e6",
+      "source": "approved-branch",
+      "target": "audit-log"
+    }
+  ],
+  "metadata": {
+    "author": "SDD Template",
+    "created": "2026-01-19",
+    "tags": ["spec", "hitl", "audit"]
+  }
+}

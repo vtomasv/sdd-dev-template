@@ -1,0 +1,171 @@
+{
+  "name": "Local LLM Workflow",
+  "description": "Workflow using Ollama for local LLM processing with privacy",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "Prompt",
+      "data": {
+        "label": "Sensitive Data Input",
+        "template": "Process the following sensitive data locally:\n\n{{sensitive_data}}\n\nTask: {{task}}"
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "privacy-check",
+      "type": "AskUserQuestion",
+      "data": {
+        "label": "Privacy Confirmation",
+        "question": "This data contains sensitive information. Process locally with Ollama?",
+        "options": ["Yes, use local LLM", "No, use cloud with encryption"]
+      },
+      "position": { "x": 100, "y": 250 }
+    },
+    {
+      "id": "local-processing",
+      "type": "Skill",
+      "data": {
+        "label": "Process with Ollama",
+        "skillName": "ollama_generate",
+        "parameters": {
+          "prompt": "{{sensitive_data}}",
+          "model": "qwen2.5-coder:latest",
+          "temperature": 0.3,
+          "max_tokens": 2000
+        }
+      },
+      "position": { "x": 100, "y": 400 }
+    },
+    {
+      "id": "cloud-processing",
+      "type": "SubAgent",
+      "data": {
+        "label": "Process with Cloud",
+        "agentPath": ".claude/agents/dev-agent.md",
+        "systemPrompt": "Process the encrypted data with cloud LLM."
+      },
+      "position": { "x": 350, "y": 400 }
+    },
+    {
+      "id": "validate-output",
+      "type": "SubAgent",
+      "data": {
+        "label": "Validate Output",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Validate that the output doesn't leak sensitive information."
+      },
+      "position": { "x": 225, "y": 550 }
+    },
+    {
+      "id": "security-scan",
+      "type": "IfElse",
+      "data": {
+        "label": "Security Check",
+        "condition": "validation.has_sensitive_data === false"
+      },
+      "position": { "x": 225, "y": 700 }
+    },
+    {
+      "id": "approve-output",
+      "type": "SubAgent",
+      "data": {
+        "label": "Approve & Save",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Save the validated output to secure storage."
+      },
+      "position": { "x": 225, "y": 850 }
+    },
+    {
+      "id": "redact-output",
+      "type": "SubAgent",
+      "data": {
+        "label": "Redact Sensitive Data",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Redact any sensitive information from the output."
+      },
+      "position": { "x": 475, "y": 850 }
+    },
+    {
+      "id": "audit-log",
+      "type": "Skill",
+      "data": {
+        "label": "Audit Log",
+        "skillName": "audit_logger",
+        "parameters": {
+          "agent_name": "ollama_agent",
+          "action": "sensitive_data_processing",
+          "decision": "{{processing_method}}",
+          "context": {
+            "used_local": "{{used_ollama}}",
+            "security_validated": "{{security_check_passed}}"
+          }
+        }
+      },
+      "position": { "x": 225, "y": 1000 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "privacy-check"
+    },
+    {
+      "id": "e2",
+      "source": "privacy-check",
+      "target": "local-processing",
+      "condition": "option === 'Yes, use local LLM'"
+    },
+    {
+      "id": "e3",
+      "source": "privacy-check",
+      "target": "cloud-processing",
+      "condition": "option === 'No, use cloud with encryption'"
+    },
+    {
+      "id": "e4",
+      "source": "local-processing",
+      "target": "validate-output"
+    },
+    {
+      "id": "e5",
+      "source": "cloud-processing",
+      "target": "validate-output"
+    },
+    {
+      "id": "e6",
+      "source": "validate-output",
+      "target": "security-scan"
+    },
+    {
+      "id": "e7",
+      "source": "security-scan",
+      "target": "approve-output",
+      "label": "Safe"
+    },
+    {
+      "id": "e8",
+      "source": "security-scan",
+      "target": "redact-output",
+      "label": "Needs Redaction"
+    },
+    {
+      "id": "e9",
+      "source": "approve-output",
+      "target": "audit-log"
+    },
+    {
+      "id": "e10",
+      "source": "redact-output",
+      "target": "audit-log"
+    }
+  ],
+  "metadata": {
+    "author": "SDD Template",
+    "created": "2026-01-19",
+    "tags": ["ollama", "privacy", "local-llm", "security"],
+    "requires_ollama": true,
+    "recommended_models": ["qwen2.5-coder:latest", "llama3.2:latest"]
+  }
+}

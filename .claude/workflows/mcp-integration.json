@@ -1,0 +1,168 @@
+{
+  "name": "MCP Integration Workflow",
+  "description": "Workflow that uses MCP tools for external integrations (GitHub, Slack, etc.)",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "Prompt",
+      "data": {
+        "label": "Task Input",
+        "template": "Task: {{task_description}}\nRepository: {{repo_url}}"
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "fetch-pr",
+      "type": "MCP",
+      "data": {
+        "label": "Fetch PR Details",
+        "server": "github",
+        "tool": "get_pull_request",
+        "parameters": {
+          "owner": "{{repo_owner}}",
+          "repo": "{{repo_name}}",
+          "pull_number": "{{pr_number}}"
+        }
+      },
+      "position": { "x": 100, "y": 250 }
+    },
+    {
+      "id": "analyze-code",
+      "type": "SubAgent",
+      "data": {
+        "label": "Analyze PR Code",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Analyze the PR code changes and provide feedback on quality, security, and best practices.",
+        "context": "{{pr_details}}"
+      },
+      "position": { "x": 100, "y": 400 }
+    },
+    {
+      "id": "quality-gate",
+      "type": "IfElse",
+      "data": {
+        "label": "Quality Check",
+        "condition": "analysis.score >= 80 && analysis.security_issues === 0"
+      },
+      "position": { "x": 100, "y": 550 }
+    },
+    {
+      "id": "approve-pr",
+      "type": "MCP",
+      "data": {
+        "label": "Approve PR",
+        "server": "github",
+        "tool": "create_review",
+        "parameters": {
+          "owner": "{{repo_owner}}",
+          "repo": "{{repo_name}}",
+          "pull_number": "{{pr_number}}",
+          "event": "APPROVE",
+          "body": "{{analysis.summary}}"
+        }
+      },
+      "position": { "x": 100, "y": 700 }
+    },
+    {
+      "id": "request-changes",
+      "type": "MCP",
+      "data": {
+        "label": "Request Changes",
+        "server": "github",
+        "tool": "create_review",
+        "parameters": {
+          "owner": "{{repo_owner}}",
+          "repo": "{{repo_name}}",
+          "pull_number": "{{pr_number}}",
+          "event": "REQUEST_CHANGES",
+          "body": "{{analysis.issues}}"
+        }
+      },
+      "position": { "x": 350, "y": 700 }
+    },
+    {
+      "id": "notify-slack",
+      "type": "MCP",
+      "data": {
+        "label": "Notify Slack",
+        "server": "slack",
+        "tool": "post_message",
+        "parameters": {
+          "channel": "#code-reviews",
+          "text": "PR Review completed: {{pr_url}}\nStatus: {{review_status}}\nScore: {{analysis.score}}"
+        }
+      },
+      "position": { "x": 225, "y": 850 }
+    },
+    {
+      "id": "audit-log",
+      "type": "Skill",
+      "data": {
+        "label": "Audit Log",
+        "skillName": "audit_logger",
+        "parameters": {
+          "agent_name": "review_agent",
+          "action": "pr_review",
+          "decision": "{{review_status}}",
+          "context": {
+            "pr_number": "{{pr_number}}",
+            "score": "{{analysis.score}}",
+            "repo": "{{repo_url}}"
+          }
+        }
+      },
+      "position": { "x": 225, "y": 1000 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "fetch-pr"
+    },
+    {
+      "id": "e2",
+      "source": "fetch-pr",
+      "target": "analyze-code"
+    },
+    {
+      "id": "e3",
+      "source": "analyze-code",
+      "target": "quality-gate"
+    },
+    {
+      "id": "e4",
+      "source": "quality-gate",
+      "target": "approve-pr",
+      "label": "Pass"
+    },
+    {
+      "id": "e5",
+      "source": "quality-gate",
+      "target": "request-changes",
+      "label": "Fail"
+    },
+    {
+      "id": "e6",
+      "source": "approve-pr",
+      "target": "notify-slack"
+    },
+    {
+      "id": "e7",
+      "source": "request-changes",
+      "target": "notify-slack"
+    },
+    {
+      "id": "e8",
+      "source": "notify-slack",
+      "target": "audit-log"
+    }
+  ],
+  "metadata": {
+    "author": "SDD Template",
+    "created": "2026-01-19",
+    "tags": ["mcp", "github", "slack", "pr-review"],
+    "mcp_servers": ["github", "slack"]
+  }
+}

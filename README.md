@@ -4,12 +4,15 @@ Template completo para desarrollo con **Antigravity de Google** que soporta proy
 
 ## 🚀 Características
 
-- ✅ **Stack SDD completo** con Docker Compose (PostgreSQL + pgvector, Redis, Dev Container)
+- ✅ **Stack SDD completo** con Docker Compose (PostgreSQL + pgvector, Redis, Ollama, Dev Container)
 - ✅ **Agentes Claude** pre-configurados para Spec, Plan, Dev y Review
+- ✅ **Visual Workflows** con [cc-wf-studio](https://github.com/breaking-brake/cc-wf-studio) para diseñar workflows con drag-and-drop
+- ✅ **LLM Local** con Ollama para privacidad total y cero costos de API
 - ✅ **Agent Skills** para generación de código, análisis de specs y recuperación de contexto
 - ✅ **HITL Checkpoints** para aprobación manual en puntos críticos
 - ✅ **Sistema de Auditoría** completo con logging de decisiones de IA
-- ✅ **Workflows listos** para Greenfield y Brownfield
+- ✅ **Workflows listos** para Greenfield y Brownfield (4 ejemplos incluidos)
+- ✅ **MCP Integration** para herramientas externas (GitHub, Slack, etc.)
 - ✅ **Integración con Antigravity** de Google
 - ✅ **Mejores prácticas** de [Humanlayer](https://www.humanlayer.dev/), [12-Factor Agents](https://github.com/humanlayer/12-factor-agents) y [ACE-FCA](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)
 
@@ -76,13 +79,18 @@ opencode
 
 ## 📚 Documentación
 
+### Guías Principales
 - [**QUICKSTART.md**](docs/QUICKSTART.md) - Primeros pasos detallados
-- [**GREENFIELD.md**](docs/GREENFIELD.md) - Guía completa para proyectos desde cero
-- [**BROWNFIELD.md**](docs/BROWNFIELD.md) - Guía completa para proyectos existentes
 - [**HITL-GUIDE.md**](docs/HITL-GUIDE.md) - Cómo usar checkpoints de aprobación manual
-- [**AUDIT-GUIDE.md**](docs/AUDIT-GUIDE.md) - Cómo revisar auditoría de decisiones
-- [**AGENT-SKILLS.md**](docs/AGENT-SKILLS.md) - Documentación de agent skills
 - [**BEST-PRACTICES.md**](docs/BEST-PRACTICES.md) - Mejores prácticas
+
+### Workflows Visuales
+- [**CC-WF-STUDIO-GUIDE.md**](docs/CC-WF-STUDIO-GUIDE.md) - Diseñar workflows con drag-and-drop
+- `.claude/workflows/` - 4 workflows de ejemplo incluidos
+
+### LLM Local
+- [**OLLAMA-GUIDE.md**](docs/OLLAMA-GUIDE.md) - Usar modelos locales con Ollama
+- `scripts/05_setup-ollama.sh` - Script de configuración automática
 
 ## 🏗️ Arquitectura
 

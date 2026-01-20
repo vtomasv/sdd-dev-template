@@ -1,0 +1,127 @@
+{
+  "name": "Code Review Workflow",
+  "description": "Automated code review with quality checks and HITL approval",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "Prompt",
+      "data": {
+        "label": "Code Input",
+        "template": "Review the following code:\n\nFile: {{file_path}}\n\n```{{language}}\n{{code}}\n```"
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "review-agent",
+      "type": "SubAgent",
+      "data": {
+        "label": "Review Agent",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Perform comprehensive code review checking: style, security, performance, tests."
+      },
+      "position": { "x": 100, "y": 250 }
+    },
+    {
+      "id": "quality-check",
+      "type": "IfElse",
+      "data": {
+        "label": "Quality Gate",
+        "condition": "review.score >= 80"
+      },
+      "position": { "x": 100, "y": 400 }
+    },
+    {
+      "id": "pass-branch",
+      "type": "SubAgent",
+      "data": {
+        "label": "Generate Report",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Generate approval report with review findings."
+      },
+      "position": { "x": 100, "y": 550 }
+    },
+    {
+      "id": "fail-branch",
+      "type": "SubAgent",
+      "data": {
+        "label": "Request Fixes",
+        "agentPath": ".claude/agents/review-agent.md",
+        "systemPrompt": "Generate detailed list of issues that must be fixed."
+      },
+      "position": { "x": 350, "y": 550 }
+    },
+    {
+      "id": "hitl-decision",
+      "type": "AskUserQuestion",
+      "data": {
+        "label": "HITL: Approve Code?",
+        "question": "Review the code review report. Approve for merge?",
+        "options": ["Approve", "Request Changes", "Reject"]
+      },
+      "position": { "x": 100, "y": 700 }
+    },
+    {
+      "id": "audit-log",
+      "type": "Skill",
+      "data": {
+        "label": "Log Review",
+        "skillName": "audit_logger",
+        "parameters": {
+          "agent_name": "review_agent",
+          "action": "code_review",
+          "decision": "{{approval_status}}",
+          "context": {
+            "file": "{{file_path}}",
+            "score": "{{review.score}}"
+          }
+        }
+      },
+      "position": { "x": 100, "y": 850 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "review-agent"
+    },
+    {
+      "id": "e2",
+      "source": "review-agent",
+      "target": "quality-check"
+    },
+    {
+      "id": "e3",
+      "source": "quality-check",
+      "target": "pass-branch",
+      "label": "Pass"
+    },
+    {
+      "id": "e4",
+      "source": "quality-check",
+      "target": "fail-branch",
+      "label": "Fail"
+    },
+    {
+      "id": "e5",
+      "source": "pass-branch",
+      "target": "hitl-decision"
+    },
+    {
+      "id": "e6",
+      "source": "fail-branch",
+      "target": "hitl-decision"
+    },
+    {
+      "id": "e7",
+      "source": "hitl-decision",
+      "target": "audit-log"
+    }
+  ],
+  "metadata": {
+    "author": "SDD Template",
+    "created": "2026-01-19",
+    "tags": ["code-review", "quality", "hitl"]
+  }
+}
