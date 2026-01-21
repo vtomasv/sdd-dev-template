@@ -1,0 +1,84 @@
+{
+  "$schema": "https://opencode.ai/schemas/config.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "SDD Development Template",
+    "description": "Template for Spec-Driven Development with AI agents"
+  },
+  "skills": {
+    "enabled": true,
+    "directory": ".opencode/skills",
+    "autoload": true,
+    "skills": [
+      {
+        "name": "hitl",
+        "file": "hitl.mjs",
+        "description": "Human-in-the-Loop checkpoint system",
+        "enabled": true
+      },
+      {
+        "name": "audit",
+        "file": "audit.mjs",
+        "description": "Audit logging for AI decisions",
+        "enabled": true
+      },
+      {
+        "name": "spec",
+        "file": "spec.mjs",
+        "description": "Specification management for SDD",
+        "enabled": true
+      }
+    ]
+  },
+  "agents": {
+    "default": "plan",
+    "available": ["plan", "build", "review"]
+  },
+  "hitl": {
+    "enabled": true,
+    "requireApprovalFor": [
+      "delete_file",
+      "modify_config",
+      "deploy",
+      "database_migration",
+      "security_change"
+    ],
+    "autoApprove": [
+      "read_file",
+      "list_directory",
+      "search"
+    ]
+  },
+  "audit": {
+    "enabled": true,
+    "logFile": ".local/audit/decisions.jsonl",
+    "logLevel": "info",
+    "categories": [
+      "code",
+      "architecture",
+      "security",
+      "testing",
+      "deployment",
+      "general"
+    ]
+  },
+  "speckit": {
+    "enabled": true,
+    "memoryDir": ".speckit/memory",
+    "commandsDir": ".speckit/commands"
+  },
+  "context": {
+    "include": [
+      ".speckit/memory/**/*.md",
+      ".claude/agents/**/*.md",
+      "README.md",
+      "docs/**/*.md"
+    ],
+    "exclude": [
+      "node_modules/**",
+      ".git/**",
+      ".data/**",
+      "*.log"
+    ]
+  }
+}

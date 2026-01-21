@@ -1,0 +1,37 @@
+{
+  "$schema": "https://github.com/github/spec-kit/schemas/config.json",
+  "version": "0.0.90",
+  "ai": "opencode",
+  "project": {
+    "name": "SDD Project",
+    "description": "Project initialized with SDD Development Template"
+  },
+  "memory": {
+    "directory": ".speckit/memory",
+    "files": {
+      "constitution": "constitution.md",
+      "specification": "specification.md",
+      "plan": "plan.md",
+      "tasks": "tasks.md"
+    }
+  },
+  "commands": {
+    "directory": ".speckit/commands",
+    "prefix": "/speckit"
+  },
+  "integrations": {
+    "opencode": {
+      "enabled": true,
+      "skillsDir": ".opencode/skills"
+    },
+    "claude": {
+      "enabled": true,
+      "agentsDir": ".claude/agents"
+    }
+  },
+  "settings": {
+    "autoSave": true,
+    "backupEnabled": true,
+    "backupDir": ".speckit/backups"
+  }
+}
