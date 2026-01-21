@@ -1,6 +1,6 @@
 # SDD Development Template
 
-Template completo para desarrollo con **Antigravity de Google** que soporta proyectos **Greenfield** y **Brownfield** con **HITL** (Human-in-the-Loop) y auditoría completa de decisiones de IA.
+Template completo para desarrollo con **agentes de IA (Claude, Gemini, OpenAI, Ollama)** que soporta proyectos **Greenfield** y **Brownfield** con **HITL** (Human-in-the-Loop) y auditoría completa de decisiones de IA.
 
 ## 🚀 Características
 
@@ -13,7 +13,7 @@ Template completo para desarrollo con **Antigravity de Google** que soporta proy
 - ✅ **Sistema de Auditoría** completo con logging de decisiones de IA
 - ✅ **Workflows listos** para Greenfield y Brownfield (4 ejemplos incluidos)
 - ✅ **MCP Integration** para herramientas externas (GitHub, Slack, etc.)
-- ✅ **Integración con Antigravity** de Google
+- ✅ **Integración con múltiples proveedores de IA** de Google
 - ✅ **Mejores prácticas** de [Humanlayer](https://www.humanlayer.dev/), [12-Factor Agents](https://github.com/humanlayer/12-factor-agents) y [ACE-FCA](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)
 
 ## 📋 Requisitos Previos
@@ -24,7 +24,6 @@ Template completo para desarrollo con **Antigravity de Google** que soporta proy
   - Anthropic (Claude)
   - OpenAI (opcional)
   - Google Gemini (opcional)
-  - Google Antigravity
 
 ## 🏁 Quick Start
 
@@ -96,7 +95,7 @@ opencode
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Antigravity IDE                       │
+│                    IDEs con soporte de IA (Claude Code, OpenCode, Gemini CLI)                       │
 │                  (Google Cloud)                          │
 └────────────────────┬────────────────────────────────────┘
                      │
@@ -194,7 +193,6 @@ MIT License - Ver [LICENSE](LICENSE) para más detalles.
 - [Humanlayer](https://www.humanlayer.dev/)
 - [12-Factor Agents](https://github.com/humanlayer/12-factor-agents)
 - [Advanced Context Engineering for Coding Agents](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)
-- [Antigravity - Google Cloud](https://cloud.google.com/products/antigravity)
 - [Spec Kit](https://github.com/github/spec-kit)
 - [OpenCode](https://github.com/opencode-ai/opencode)
 - [Claude Code](https://www.anthropic.com/claude-code)
