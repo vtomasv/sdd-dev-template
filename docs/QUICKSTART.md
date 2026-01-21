@@ -1,89 +1,59 @@
-# Quick Start Guide
+# 🚀 Guía de Inicio Rápido
 
-Guía rápida de 5 minutos para comenzar a usar el SDD Development Template con agentes de IA.
+Esta guía te llevará de cero a desarrollando con agentes de IA en 5 minutos.
 
 ## Requisitos Previos
 
-### Software Necesario
+- **Docker** y **Docker Compose** instalados
+- **Git** instalado
+- Al menos una API key de IA:
+  - [OpenAI API Key](https://platform.openai.com/api-keys) (para OpenCode)
+  - [Anthropic API Key](https://console.anthropic.com/) (para Claude)
+  - [Gemini API Key](https://makersuite.google.com/app/apikey) (para Gemini)
+  - O usar **Ollama** para modelos locales (sin API key)
 
-- **Docker** (versión 20.10+)
-- **Docker Compose** (versión 2.0+)
-- **Git** (versión 2.30+)
-- **Editor de código** (VS Code recomendado con cc-wf-studio extension)
-
-### API Keys Requeridas
-
-Al menos una de las siguientes:
-
-- **Anthropic API Key** (Claude) - **Recomendado** - [Obtener aquí](https://console.anthropic.com/)
-- **Google Gemini API Key** (opcional) - [Obtener aquí](https://makersuite.google.com/app/apikey)
-- **OpenAI API Key** (opcional) - [Obtener aquí](https://platform.openai.com/)
-- **Ollama** (local) - Sin API key requerida
-
-## Instalación Rápida
-
-### 1. Clonar el Template
+## Paso 1: Clonar el Template
 
 ```bash
-# Opción A: Usar como template en GitHub
-# Ve a: https://github.com/vtomasv/sdd-dev-template
-# Click en "Use this template" → "Create a new repository"
-
-# Opción B: Clonar directamente
 git clone https://github.com/vtomasv/sdd-dev-template.git mi-proyecto
 cd mi-proyecto
 ```
 
-### 2. Configurar Variables de Entorno
+## Paso 2: Configurar Variables de Entorno
 
 ```bash
-# Copiar archivo de ejemplo
 cp .env.example .env
-
-# Editar con tus API keys
-nano .env  # o vim, code, etc.
 ```
 
-**Variables críticas a configurar:**
+Edita `.env` y agrega tus API keys:
 
 ```bash
-# Claude (recomendado)
-ANTHROPIC_API_KEY=sk-ant-tu-key-aqui
+# Mínimo necesario (elige al menos uno)
+OPENAI_API_KEY=sk-...           # Para OpenCode
+ANTHROPIC_API_KEY=sk-ant-...    # Para Claude
+GEMINI_API_KEY=AI...            # Para Gemini
 
-# Gemini (opcional)
-GEMINI_API_KEY=tu-key-aqui
-
-# OpenAI (opcional)
-OPENAI_API_KEY=sk-tu-key-aqui
-
-# Ollama (local - sin API key)
-OLLAMA_BASE_URL=http://ollama:11434
-
-# PostgreSQL
-POSTGRES_PASSWORD=sdd_secure_password_2024
-
-# Redis
-REDIS_PASSWORD=redis_secure_password_2024
+# Ollama no requiere API key (modelos locales)
 ```
 
-### 3. Inicializar Proyecto
+## Paso 3: Inicializar Proyecto
 
-**Para proyecto Greenfield (desde cero):**
+### Proyecto Greenfield (desde cero)
 
 ```bash
-./scripts/01_init-greenfield.sh
+./scripts/01_init-greenfield.sh mi-proyecto
 ```
 
-**Para proyecto Brownfield (repo existente):**
+### Proyecto Brownfield (código existente)
 
 ```bash
-./scripts/02_init-brownfield.sh https://github.com/user/repo.git /path/to/context.md
+./scripts/02_init-brownfield.sh https://github.com/user/repo.git context.md
 ```
 
-### 4. Levantar Stack
+## Paso 4: Levantar el Stack
 
 ```bash
-# Build de la imagen dev (primera vez o después de cambios)
+# Construir contenedor de desarrollo
 docker compose build dev
 
 # Levantar todos los servicios
@@ -93,306 +63,183 @@ docker compose up -d
 docker compose ps
 ```
 
-**Salida esperada:**
+Deberías ver:
+- ✅ `postgres` - Base de datos
+- ✅ `redis` - Cache
+- ✅ `ollama` - LLM local
+- ✅ `dev` - Contenedor de desarrollo
 
-```
-NAME            STATUS          PORTS
-sdd-postgres    Up (healthy)    5432
-sdd-redis       Up (healthy)    6379
-sdd-ollama      Up (healthy)    11434
-sdd-dev         Up              -
-sdd-adminer     Up              8080
-```
-
-### 5. Verificar Instalación
+## Paso 5: Entrar al Contenedor de Desarrollo
 
 ```bash
-# Entrar al contenedor dev
 docker compose exec dev bash
+```
 
-# Verificar herramientas instaladas
-specify --version
-# Esperado: specify 0.0.90
+## Paso 6: Configurar Specify CLI para OpenCode
 
-opencode --version
-# Esperado: opencode X.X.X
+**⚠️ IMPORTANTE**: Este paso es necesario para que los comandos `/speckit.*` funcionen correctamente.
 
-claude --version
-# Esperado: claude X.X.X
+```bash
+# Dentro del contenedor dev
+specify init . --ai opencode --force
+```
 
-gemini --version
-# Esperado: gemini X.X.X
+Esto configura los comandos slash de Specify para OpenCode.
 
-# Verificar todas las herramientas con Specify
+## Paso 7: Verificar Herramientas
+
+```bash
+# Verificar todas las herramientas instaladas
 specify check
+
+# Verificar herramientas individuales
+opencode --version
+claude --version
+gemini --version
+ollama --version
 ```
 
-**Salida esperada de `specify check`:**
+## Paso 8: Comenzar Desarrollo
 
-```
-✅ git: installed
-✅ claude: installed
-✅ gemini: installed
-✅ opencode: installed
-```
-
-## Uso Básico
-
-### Opción 1: Desarrollo Greenfield con Specify
+### Opción A: OpenCode (Recomendado)
 
 ```bash
-# Dentro del contenedor dev
-cd /workspace
-
-# Inicializar proyecto con Specify
-specify init . --ai claude
-
-# Seguir el workflow de Spec-Driven Development
-# 1. Crear constitución del proyecto
-/speckit.constitution
-
-# 2. Definir especificación
-/speckit.specify
-
-# 3. Crear plan técnico
-/speckit.plan
-
-# 4. Generar tareas
-/speckit.tasks
-
-# 5. Implementar
-/speckit.implement
-```
-
-### Opción 2: Desarrollo con OpenCode
-
-```bash
-# Dentro del contenedor dev
-cd /workspace
-
-# Iniciar OpenCode
 opencode
-
-# Usar comandos naturales
-> "Crea una API REST con FastAPI para gestión de tareas"
-> "Agrega tests unitarios con pytest"
-> "Documenta el código con docstrings"
 ```
 
-### Opción 3: Desarrollo con Claude Code
+Comandos slash disponibles:
+- `/speckit.constitution` - Crear principios del proyecto
+- `/speckit.specify` - Definir especificación
+- `/speckit.plan` - Crear plan técnico
+- `/speckit.tasks` - Generar lista de tareas
+- `/speckit.implement` - Ejecutar implementación
+
+### Opción B: Claude Code
 
 ```bash
-# Dentro del contenedor dev
-cd /workspace
-
-# Iniciar Claude Code
 claude
-
-# Usar comandos naturales
-> "Analiza este código y sugiere mejoras"
-> "Refactoriza esta función para mejor legibilidad"
-> "Genera documentación completa"
 ```
 
-### Opción 4: Desarrollo con Ollama (Local)
+### Opción C: Gemini CLI
 
 ```bash
-# Configurar Ollama
-./scripts/05_setup-ollama.sh
-
-# Usar modelo local
-ollama run llama3.2
-
-# O usar el cliente Python
-python3 << 'PYTHON'
-from src.utils.ollama_client import get_llm_router
-
-router = get_llm_router()
-response = router.generate("Explica qué es Spec-Driven Development")
-print(response)
-PYTHON
+gemini
 ```
 
-## Workflows Visuales con cc-wf-studio
-
-### 1. Instalar Extension en VS Code
+### Opción D: Ollama (Local)
 
 ```bash
-# La extensión se sugiere automáticamente al abrir el proyecto
-# O instalar manualmente desde VS Code Marketplace
+# Descargar modelo
+ollama pull llama3.2
+
+# Usar con OpenCode
+OPENAI_BASE_URL=http://ollama:11434/v1 opencode
 ```
 
-### 2. Abrir Workflow de Ejemplo
+## Flujo de Desarrollo SDD
 
-```bash
-# Desde VS Code
-code .claude/workflows/spec-generation.json
+### 1. Establecer Principios
+
+```
+/speckit.constitution Crear principios enfocados en calidad de código, 
+testing, experiencia de usuario y rendimiento
 ```
 
-### 3. Editar Workflow Visualmente
+### 2. Definir Especificación
 
-- Drag & drop de nodos
-- Configurar SubAgents
-- Agregar conditional branching
-- Exportar a `.claude` format
-
-## Sistema HITL (Human-in-the-Loop)
-
-### Ver Checkpoints Pendientes
-
-```bash
-docker compose exec dev python src/skills/hitl_checkpoint.py list
+```
+/speckit.specify Construir una API REST para gestión de tareas con 
+autenticación JWT, CRUD completo y filtros avanzados
 ```
 
-### Aprobar Checkpoint
+### 3. Crear Plan Técnico
 
-```bash
-docker compose exec dev python src/skills/hitl_checkpoint.py approve <checkpoint_id>
+```
+/speckit.plan Usar FastAPI con PostgreSQL, SQLAlchemy ORM, 
+pytest para testing y Docker para deployment
 ```
 
-### Rechazar Checkpoint
+### 4. Generar Tareas
 
-```bash
-docker compose exec dev python src/skills/hitl_checkpoint.py reject <checkpoint_id> --reason "Motivo del rechazo"
+```
+/speckit.tasks
 ```
 
-## Sistema de Auditoría
+### 5. Implementar
 
-### Ver Logs Recientes
-
-```bash
-docker compose exec dev python src/audit/logger.py --show-recent
 ```
-
-### Consultar en PostgreSQL
-
-```bash
-docker compose exec postgres psql -U sdd -d sdd_db
-
-# Ver últimas decisiones
-SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 10;
-
-# Ver checkpoints pendientes
-SELECT * FROM hitl_checkpoints WHERE status = 'pending';
-```
-
-## Comandos Útiles
-
-### Gestión de Servicios
-
-```bash
-# Ver logs en tiempo real
-docker compose logs -f dev
-
-# Reiniciar servicio específico
-docker compose restart dev
-
-# Parar todos los servicios
-docker compose down
-
-# Parar y eliminar volúmenes (⚠️ borra datos)
-docker compose down -v
-```
-
-### Debugging
-
-```bash
-# Ver logs de PostgreSQL
-docker compose logs postgres
-
-# Ver logs de Ollama
-docker compose logs ollama
-
-# Acceder a Adminer (UI de PostgreSQL)
-# Abrir en navegador: http://localhost:8080
-# Server: postgres
-# Username: sdd
-# Password: (ver .env)
-# Database: sdd_db
-```
-
-### Desarrollo
-
-```bash
-# Ejecutar tests
-docker compose exec dev pytest
-
-# Formatear código
-docker compose exec dev black src/
-
-# Linter
-docker compose exec dev flake8 src/
-
-# Type checking
-docker compose exec dev mypy src/
+/speckit.implement
 ```
 
 ## Troubleshooting
 
-### "specify: command not found"
+### Error: "specify: command not found"
 
 ```bash
-# Entrar al contenedor
-docker compose exec dev bash
-
-# Reinstalar Specify
+# Dentro del contenedor
 uv tool install git+https://github.com/github/spec-kit.git
-
-# Verificar
-specify --version
 ```
 
-### "uv: command not found"
+### Error: "globalspecify.read_file unavailable"
+
+Este error ocurre cuando Specify no está configurado para OpenCode:
 
 ```bash
-# Reinstalar uv como root
-docker compose exec -u root dev bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-mv /root/.local/bin/uv /usr/local/bin/uv
-chmod +x /usr/local/bin/uv
+# Ejecutar dentro del contenedor
+specify init . --ai opencode --force
 ```
 
-### Servicios no inician
+### Error: "opencode: command not found"
 
 ```bash
-# Verificar logs
-docker compose logs
+# Verificar instalación
+which opencode
 
-# Rebuild completo
-docker compose down
-docker compose build --no-cache
-docker compose up -d
+# Si no está, reinstalar
+npm install -g opencode-ai
 ```
 
-### Problemas con Ollama
+### Error: "Cannot connect to Ollama"
 
 ```bash
 # Verificar que Ollama está corriendo
 docker compose ps ollama
 
-# Ver logs
-docker compose logs ollama
+# Reiniciar si es necesario
+docker compose restart ollama
+```
 
-# Reinstalar modelos
-docker compose exec ollama ollama pull llama3.2
+### Error: "Docker build fails"
+
+```bash
+# Limpiar cache y reconstruir
+docker compose build dev --no-cache
 ```
 
 ## Próximos Pasos
 
-1. **Leer documentación completa**: [README.md](../README.md)
-2. **Aprender sobre HITL**: [HITL-GUIDE.md](HITL-GUIDE.md)
-3. **Explorar workflows visuales**: [CC-WF-STUDIO-GUIDE.md](CC-WF-STUDIO-GUIDE.md)
-4. **Configurar Ollama**: [OLLAMA-GUIDE.md](OLLAMA-GUIDE.md)
-5. **Mejores prácticas**: [BEST-PRACTICES.md](BEST-PRACTICES.md)
+1. **Leer la documentación completa**:
+   - [HITL-GUIDE.md](HITL-GUIDE.md) - Human-in-the-Loop
+   - [OLLAMA-GUIDE.md](OLLAMA-GUIDE.md) - Modelos locales
+   - [CC-WF-STUDIO-GUIDE.md](CC-WF-STUDIO-GUIDE.md) - Editor visual de workflows
+   - [BEST-PRACTICES.md](BEST-PRACTICES.md) - Mejores prácticas
 
-## Recursos Adicionales
+2. **Explorar workflows de ejemplo**:
+   ```bash
+   ls .claude/workflows/
+   ```
 
-- [Spec Kit Documentation](https://github.com/github/spec-kit)
-- [cc-wf-studio GitHub](https://github.com/breaking-brake/cc-wf-studio)
-- [Ollama Models](https://ollama.ai/library)
-- [Humanlayer Best Practices](https://www.humanlayer.dev/)
-- [12-Factor Agents](https://github.com/humanlayer/12-factor-agents)
+3. **Configurar cc-wf-studio** en VSCode para editar workflows visualmente
+
+4. **Probar HITL** para checkpoints de aprobación manual
+
+## Recursos
+
+- [GitHub Spec Kit](https://github.com/github/spec-kit) - 64k ⭐
+- [OpenCode](https://opencode.ai/) - CLI de IA
+- [Humanlayer](https://www.humanlayer.dev/) - HITL best practices
+- [12-Factor Agents](https://github.com/humanlayer/12-factor-agents) - Principios de diseño
 
 ---
 
-**¿Problemas?** Abre un [issue](https://github.com/vtomasv/sdd-dev-template/issues)
+**¿Problemas?** Abre un issue en el repositorio o consulta la documentación completa.

@@ -13,20 +13,24 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Validar argumentos
+# Verificar argumentos
 if [ -z "$1" ]; then
-    echo -e "${RED}❌ Error: Se requiere URL del repositorio${NC}"
+    echo -e "${RED}❌ Error: Debes proporcionar la URL del repositorio${NC}"
     echo "Uso: ./scripts/02_init-brownfield.sh <repo-url> [context-file]"
-    echo "Ejemplo: ./scripts/02_init-brownfield.sh https://github.com/user/repo.git /path/to/context.md"
+    echo ""
+    echo "Ejemplos:"
+    echo "  ./scripts/02_init-brownfield.sh https://github.com/user/repo.git"
+    echo "  ./scripts/02_init-brownfield.sh https://github.com/user/repo.git /path/to/context.md"
     exit 1
 fi
 
 REPO_URL=$1
 CONTEXT_FILE=${2:-""}
-PROJECT_NAME=$(basename "$REPO_URL" .git)
 
-echo -e "${BLUE}📦 Proyecto: ${PROJECT_NAME}${NC}"
-echo -e "${BLUE}🔗 Repositorio: ${REPO_URL}${NC}"
+echo -e "${BLUE}📦 Repositorio: ${REPO_URL}${NC}"
+if [ -n "$CONTEXT_FILE" ]; then
+    echo -e "${BLUE}📄 Archivo de contexto: ${CONTEXT_FILE}${NC}"
+fi
 
 # Verificar que .env existe
 if [ ! -f .env ]; then
@@ -41,13 +45,13 @@ fi
 echo -e "${BLUE}📁 Creando directorios locales...${NC}"
 mkdir -p .data/pgdata .data/redis .data/ollama
 mkdir -p .local/claude .local/opencode .local/cache .local/specify .local/audit
-mkdir -p .local/brownfield
+mkdir -p .local/brownfield/source .local/brownfield/context
 
 # Generar session ID único
-SESSION_ID="brownfield-$(date +%Y%m%d-%H%M%S)-$(uuidgen | cut -d'-' -f1)"
+SESSION_ID="brownfield-$(date +%Y%m%d-%H%M%S)-$(uuidgen | cut -d'-' -f1 2>/dev/null || echo $RANDOM)"
 echo -e "${GREEN}🔑 Session ID: ${SESSION_ID}${NC}"
 
-# Actualizar .env con session ID y repo URL
+# Actualizar .env con session ID
 if grep -q "^SESSION_ID=" .env; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
@@ -58,6 +62,7 @@ else
     echo "SESSION_ID=${SESSION_ID}" >> .env
 fi
 
+# Actualizar PROJECT_TYPE
 if grep -q "^PROJECT_TYPE=" .env; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s/^PROJECT_TYPE=.*/PROJECT_TYPE=brownfield/" .env
@@ -68,6 +73,7 @@ else
     echo "PROJECT_TYPE=brownfield" >> .env
 fi
 
+# Guardar URL del repo
 if grep -q "^REPO_URL=" .env; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s|^REPO_URL=.*|REPO_URL=${REPO_URL}|" .env
@@ -78,6 +84,7 @@ else
     echo "REPO_URL=${REPO_URL}" >> .env
 fi
 
+# Guardar archivo de contexto si se proporcionó
 if [ -n "$CONTEXT_FILE" ]; then
     if grep -q "^CONTEXT_FILE=" .env; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -92,141 +99,131 @@ fi
 
 # Clonar repositorio existente
 echo -e "${BLUE}📥 Clonando repositorio existente...${NC}"
-REPO_DIR=".local/brownfield/${PROJECT_NAME}"
-if [ -d "$REPO_DIR" ]; then
-    echo -e "${YELLOW}⚠️  Repositorio ya existe. Actualizando...${NC}"
-    cd "$REPO_DIR" && git pull && cd -
+if [ -d ".local/brownfield/source/.git" ]; then
+    echo -e "${YELLOW}⚠️  Repositorio ya clonado, actualizando...${NC}"
+    cd .local/brownfield/source && git pull && cd ../../..
 else
-    git clone "$REPO_URL" "$REPO_DIR"
+    git clone "$REPO_URL" .local/brownfield/source
 fi
 
-# Analizar estructura del repositorio
-echo -e "${BLUE}🔍 Analizando estructura del repositorio...${NC}"
-ANALYSIS_FILE=".local/brownfield/${PROJECT_NAME}_analysis.json"
-
-cat > "$ANALYSIS_FILE" <<EOF
-{
-  "session_id": "${SESSION_ID}",
-  "project_name": "${PROJECT_NAME}",
-  "repo_url": "${REPO_URL}",
-  "analyzed_at": "$(date -Iseconds)",
-  "structure": {
-    "total_files": $(find "$REPO_DIR" -type f | wc -l),
-    "languages": $(find "$REPO_DIR" -type f -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.java" -o -name "*.go" | sed 's/.*\.//' | sort | uniq -c | jq -R -s -c 'split("\n")[:-1]'),
-    "has_readme": $([ -f "$REPO_DIR/README.md" ] && echo "true" || echo "false"),
-    "has_package_json": $([ -f "$REPO_DIR/package.json" ] && echo "true" || echo "false"),
-    "has_requirements": $([ -f "$REPO_DIR/requirements.txt" ] && echo "true" || echo "false"),
-    "has_dockerfile": $([ -f "$REPO_DIR/Dockerfile" ] && echo "true" || echo "false")
-  }
-}
-EOF
-
-echo -e "${GREEN}✅ Análisis guardado en: ${ANALYSIS_FILE}${NC}"
-
-# Procesar archivo de contexto si se proporcionó
+# Copiar archivo de contexto si existe
 if [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
-    echo -e "${BLUE}📄 Procesando archivo de contexto...${NC}"
-    CONTEXT_DEST=".local/brownfield/${PROJECT_NAME}_context.md"
-    cp "$CONTEXT_FILE" "$CONTEXT_DEST"
-    echo -e "${GREEN}✅ Contexto copiado a: ${CONTEXT_DEST}${NC}"
-else
-    echo -e "${YELLOW}⚠️  No se proporcionó archivo de contexto. Generando contexto básico...${NC}"
-    CONTEXT_DEST=".local/brownfield/${PROJECT_NAME}_context.md"
-    
-    cat > "$CONTEXT_DEST" <<EOF
-# ${PROJECT_NAME} - Contexto del Proyecto
+    echo -e "${BLUE}📋 Copiando archivo de contexto...${NC}"
+    cp "$CONTEXT_FILE" .local/brownfield/context/deepwiki-context.md
+fi
+
+# Analizar repositorio y generar contexto
+echo -e "${BLUE}🔍 Analizando repositorio...${NC}"
+REPO_NAME=$(basename "$REPO_URL" .git)
+TOTAL_FILES=$(find .local/brownfield/source -type f | wc -l)
+CODE_FILES=$(find .local/brownfield/source -type f \( -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.java" -o -name "*.go" -o -name "*.rs" -o -name "*.rb" \) | wc -l)
+
+cat > .local/brownfield/context/analysis.md <<ANALYSIS
+# Análisis de Repositorio Brownfield
 
 ## Información General
-- **Repositorio**: ${REPO_URL}
-- **Analizado**: $(date)
+- **Repositorio**: ${REPO_NAME}
+- **URL**: ${REPO_URL}
 - **Session ID**: ${SESSION_ID}
+- **Fecha de análisis**: $(date)
 
-## Estructura del Proyecto
+## Estadísticas
+- **Total de archivos**: ${TOTAL_FILES}
+- **Archivos de código**: ${CODE_FILES}
+
+## Estructura de Directorios
 \`\`\`
-$(tree -L 2 -I 'node_modules|.git|__pycache__|venv' "$REPO_DIR" 2>/dev/null || find "$REPO_DIR" -maxdepth 2 -type d | head -20)
+$(find .local/brownfield/source -type d -maxdepth 3 | head -30)
 \`\`\`
 
 ## Archivos Principales
-$(find "$REPO_DIR" -maxdepth 2 -type f -name "README*" -o -name "package.json" -o -name "requirements.txt" -o -name "Dockerfile" | head -10)
+\`\`\`
+$(find .local/brownfield/source -type f -maxdepth 2 | head -20)
+\`\`\`
 
-## README del Proyecto Original
-$(if [ -f "$REPO_DIR/README.md" ]; then cat "$REPO_DIR/README.md"; else echo "No README encontrado"; fi)
+## Contexto Adicional
+$(if [ -f ".local/brownfield/context/deepwiki-context.md" ]; then
+    echo "Se proporcionó archivo de contexto adicional (deepwiki-context.md)"
+else
+    echo "No se proporcionó archivo de contexto adicional"
+fi)
+ANALYSIS
 
-## Notas
-Este contexto fue generado automáticamente. Se recomienda complementar con:
-1. Documentación de arquitectura
-2. Decisiones de diseño
-3. Dependencias críticas
-4. Puntos de integración
-5. Casos de uso principales
+# Inicializar estructura Specify con el agente correcto
+echo -e "${BLUE}📋 Inicializando Specify CLI para OpenCode...${NC}"
 
-Para un mejor contexto, considera usar herramientas como:
-- DeepWiki: https://deepwiki.com
-- Repo-GPT: Para generar documentación automática
-- Code2Prompt: Para extraer contexto estructurado
-EOF
-    
-    echo -e "${GREEN}✅ Contexto básico generado en: ${CONTEXT_DEST}${NC}"
+# Detectar qué agente de IA usar (por defecto opencode)
+AI_AGENT=${AI_AGENT:-opencode}
+
+# Verificar si specify está instalado
+if command -v specify &> /dev/null; then
+    echo -e "${BLUE}🔧 Ejecutando: specify init . --ai ${AI_AGENT} --force${NC}"
+    specify init . --ai ${AI_AGENT} --force --no-git 2>/dev/null || {
+        echo -e "${YELLOW}⚠️  specify init falló, creando estructura manual...${NC}"
+        mkdir -p .specify/memory .specify/specs .specify/commands
+    }
+else
+    echo -e "${YELLOW}⚠️  Specify CLI no encontrado. Se configurará dentro del contenedor Docker.${NC}"
+    echo -e "${YELLOW}   Después de 'docker compose exec dev bash', ejecuta:${NC}"
+    echo -e "${YELLOW}   specify init . --ai opencode --force${NC}"
+    mkdir -p .specify/memory .specify/specs .specify/commands
 fi
 
-# Inicializar estructura Specify
-echo -e "${BLUE}📋 Inicializando estructura Specify...${NC}"
-mkdir -p .specify
-cat > .specify/speckit.plan <<EOF
-# ${PROJECT_NAME} - Plan de Desarrollo (Brownfield)
-
-## Contexto
-Proyecto existente importado desde: ${REPO_URL}
+# Crear archivos de plan y tareas
+cat > .specify/speckit.plan <<PLAN
+# ${REPO_NAME} - Plan de Desarrollo Brownfield
 
 ## Objetivo
-Continuar desarrollo de ${PROJECT_NAME} usando metodología SDD con agentes de IA.
+Continuar desarrollo de ${REPO_NAME} usando metodología SDD con agentes de IA.
 
-## Análisis Inicial
-- Repositorio analizado: ${REPO_DIR}
-- Contexto disponible: ${CONTEXT_DEST}
+## Contexto
+Este es un proyecto brownfield. El código existente ha sido analizado y el contexto está disponible en:
+- .local/brownfield/source/ - Código fuente original
+- .local/brownfield/context/analysis.md - Análisis automático
+- .local/brownfield/context/deepwiki-context.md - Contexto adicional (si existe)
 
 ## Fases
-1. Análisis de código existente
+1. Análisis del código existente
 2. Identificación de mejoras
-3. Planificación de nuevas features
+3. Planificación de cambios
 4. Implementación iterativa
 5. Testing y validación
-6. Deployment
 
 ## Estado
-- Fase actual: Análisis de código existente
-- Progreso: 0%
-EOF
+- Fase actual: Análisis del código existente
+- Progreso: 10%
+PLAN
 
-cat > .specify/speckit.tasks <<EOF
-# ${PROJECT_NAME} - Tareas (Brownfield)
+cat > .specify/speckit.tasks <<TASKS
+# ${REPO_NAME} - Tareas Brownfield
 
 ## Pendientes
-- [ ] Revisar contexto del proyecto
-- [ ] Analizar arquitectura existente
-- [ ] Identificar deuda técnica
-- [ ] Planificar próximas features
+- [ ] Revisar análisis del repositorio
+- [ ] Leer contexto de deepwiki (si existe)
+- [ ] Identificar áreas de mejora
+- [ ] Definir especificación de cambios
 
 ## En Progreso
+- [ ] Análisis inicial del código
 
 ## Completadas
 - [x] Clonar repositorio existente
-- [x] Generar análisis inicial
-- [x] Configurar entorno brownfield
-EOF
+- [x] Generar análisis automático
+- [x] Inicializar proyecto brownfield
+TASKS
 
 # Crear estructura de agentes Claude
-echo -e "${BLUE}🤖 Configurando agentes Claude con contexto...${NC}"
-cat > .claude/session.json <<EOF
+echo -e "${BLUE}🤖 Configurando agentes Claude...${NC}"
+mkdir -p .claude
+cat > .claude/session.json <<SESSION
 {
   "session_id": "${SESSION_ID}",
-  "project_name": "${PROJECT_NAME}",
+  "project_name": "${REPO_NAME}",
   "project_type": "brownfield",
   "repo_url": "${REPO_URL}",
-  "repo_path": "${REPO_DIR}",
-  "context_file": "${CONTEXT_DEST}",
-  "analysis_file": "${ANALYSIS_FILE}",
+  "context_file": "${CONTEXT_FILE}",
   "created_at": "$(date -Iseconds)",
+  "ai_agent": "${AI_AGENT}",
   "agents": {
     "spec_agent": "enabled",
     "plan_agent": "enabled",
@@ -235,19 +232,31 @@ cat > .claude/session.json <<EOF
   },
   "hitl_enabled": true,
   "audit_enabled": true,
-  "context_loaded": true
+  "brownfield": {
+    "source_path": ".local/brownfield/source",
+    "context_path": ".local/brownfield/context",
+    "analysis_file": ".local/brownfield/context/analysis.md"
+  }
 }
-EOF
+SESSION
 
 echo -e "${GREEN}✅ Inicialización Brownfield completada!${NC}"
 echo ""
-echo -e "${BLUE}Próximos pasos:${NC}"
-echo "1. Revisar contexto en: ${CONTEXT_DEST}"
-echo "2. docker compose build dev"
-echo "3. docker compose up -d"
-echo "4. docker compose exec dev bash"
-echo "5. python scripts/utils/context-analyzer.py ${REPO_DIR}"
-echo "6. opencode"
+echo -e "${BLUE}📊 Resumen:${NC}"
+echo "  - Repositorio clonado: .local/brownfield/source/"
+echo "  - Análisis generado: .local/brownfield/context/analysis.md"
+if [ -f ".local/brownfield/context/deepwiki-context.md" ]; then
+    echo "  - Contexto adicional: .local/brownfield/context/deepwiki-context.md"
+fi
 echo ""
-echo -e "${YELLOW}💡 Tip: Los agentes tendrán acceso al contexto del proyecto existente${NC}"
+echo -e "${BLUE}Próximos pasos:${NC}"
+echo "1. docker compose build dev"
+echo "2. docker compose up -d"
+echo "3. docker compose exec dev bash"
+echo "4. specify init . --ai opencode --force  # Configurar comandos /speckit.*"
+echo "5. opencode"
+echo ""
+echo -e "${YELLOW}📝 IMPORTANTE: Dentro del contenedor, ejecuta 'specify init . --ai opencode --force'${NC}"
+echo -e "${YELLOW}   para configurar correctamente los comandos /speckit.* para OpenCode${NC}"
+echo ""
 echo -e "${GREEN}🎉 ¡Listo para continuar el desarrollo!${NC}"
