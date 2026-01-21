@@ -1,20 +1,24 @@
 # Quick Start Guide
 
-Guía rápida para comenzar a usar el SDD Development Template con Antigravity de Google.
+Guía rápida de 5 minutos para comenzar a usar el SDD Development Template con agentes de IA.
 
 ## Requisitos Previos
 
 ### Software Necesario
+
 - **Docker** (versión 20.10+)
 - **Docker Compose** (versión 2.0+)
 - **Git** (versión 2.30+)
-- **Editor de código** (VS Code recomendado)
+- **Editor de código** (VS Code recomendado con cc-wf-studio extension)
 
 ### API Keys Requeridas
-- **Anthropic API Key** (Claude) - [Obtener aquí](https://console.anthropic.com/)
-- **Google Antigravity API Key** - [Obtener aquí](https://cloud.google.com/antigravity)
+
+Al menos una de las siguientes:
+
+- **Anthropic API Key** (Claude) - **Recomendado** - [Obtener aquí](https://console.anthropic.com/)
+- **Google Gemini API Key** (opcional) - [Obtener aquí](https://makersuite.google.com/app/apikey)
 - **OpenAI API Key** (opcional) - [Obtener aquí](https://platform.openai.com/)
-- **Google Gemini API Key** (opcional) - [Obtener aquí](https://ai.google.dev/)
+- **Ollama** (local) - Sin API key requerida
 
 ## Instalación Rápida
 
@@ -41,27 +45,37 @@ nano .env  # o vim, code, etc.
 ```
 
 **Variables críticas a configurar:**
+
 ```bash
-# Claude (requerido)
+# Claude (recomendado)
 ANTHROPIC_API_KEY=sk-ant-tu-key-aqui
 
-# Antigravity (requerido)
-GOOGLE_ANTIGRAVITY_API_KEY=tu-key-aqui
-GOOGLE_ANTIGRAVITY_PROJECT_ID=tu-project-id
-
-# Opcionales
-OPENAI_API_KEY=sk-tu-key-aqui
+# Gemini (opcional)
 GEMINI_API_KEY=tu-key-aqui
+
+# OpenAI (opcional)
+OPENAI_API_KEY=sk-tu-key-aqui
+
+# Ollama (local - sin API key)
+OLLAMA_BASE_URL=http://ollama:11434
+
+# PostgreSQL
+POSTGRES_PASSWORD=sdd_secure_password_2024
+
+# Redis
+REDIS_PASSWORD=redis_secure_password_2024
 ```
 
 ### 3. Inicializar Proyecto
 
 **Para proyecto Greenfield (desde cero):**
+
 ```bash
-./scripts/01_init-greenfield.sh mi-proyecto
+./scripts/01_init-greenfield.sh
 ```
 
 **Para proyecto Brownfield (repo existente):**
+
 ```bash
 ./scripts/02_init-brownfield.sh https://github.com/user/repo.git /path/to/context.md
 ```
@@ -69,7 +83,7 @@ GEMINI_API_KEY=tu-key-aqui
 ### 4. Levantar Stack
 
 ```bash
-# Build de la imagen dev
+# Build de la imagen dev (primera vez o después de cambios)
 docker compose build dev
 
 # Levantar todos los servicios
@@ -80,10 +94,12 @@ docker compose ps
 ```
 
 **Salida esperada:**
+
 ```
 NAME            STATUS          PORTS
 sdd-postgres    Up (healthy)    5432
 sdd-redis       Up (healthy)    6379
+sdd-ollama      Up (healthy)    11434
 sdd-dev         Up              -
 sdd-adminer     Up              8080
 ```
@@ -96,258 +112,287 @@ docker compose exec dev bash
 
 # Verificar herramientas instaladas
 specify --version
+# Esperado: specify 0.0.90
+
 opencode --version
+# Esperado: opencode X.X.X
+
 claude --version
+# Esperado: claude X.X.X
+
 gemini --version
+# Esperado: gemini X.X.X
 
-# Verificar conexión a PostgreSQL
-python - <<'PY'
-import os, psycopg
-with psycopg.connect(os.environ['DATABASE_URL']) as conn:
-    with conn.cursor() as cur:
-        cur.execute("SELECT extname FROM pg_extension WHERE extname='vector'")
-        print("✅ pgvector:", cur.fetchone())
-PY
+# Verificar todas las herramientas con Specify
+specify check
 ```
 
-### 6. Inicializar Sistema de Auditoría
+**Salida esperada de `specify check`:**
+
+```
+✅ git: installed
+✅ claude: installed
+✅ gemini: installed
+✅ opencode: installed
+```
+
+## Uso Básico
+
+### Opción 1: Desarrollo Greenfield con Specify
 
 ```bash
 # Dentro del contenedor dev
-./scripts/04_audit-init.sh
+cd /workspace
+
+# Inicializar proyecto con Specify
+specify init . --ai claude
+
+# Seguir el workflow de Spec-Driven Development
+# 1. Crear constitución del proyecto
+/speckit.constitution
+
+# 2. Definir especificación
+/speckit.specify
+
+# 3. Crear plan técnico
+/speckit.plan
+
+# 4. Generar tareas
+/speckit.tasks
+
+# 5. Implementar
+/speckit.implement
 ```
 
-### 7. Configurar Antigravity (opcional pero recomendado)
+### Opción 2: Desarrollo con OpenCode
 
 ```bash
 # Dentro del contenedor dev
-./scripts/03_setup-antigravity.sh
+cd /workspace
 
-# Probar conexión
-python .local/antigravity/test_connection.py
-```
-
-## Primer Proyecto
-
-### Greenfield: Crear API REST desde Cero
-
-```bash
-# 1. Dentro del contenedor dev
-docker compose exec dev bash
-
-# 2. Inicializar Specify
-specify init .
-
-# 3. Crear especificación
-cat > .specify/specs/api-rest.md <<'EOF'
-# API REST de Tareas
-
-## Objetivo
-Crear una API REST simple para gestión de tareas (TODO list).
-
-## Requisitos Funcionales
-- CRUD de tareas (Create, Read, Update, Delete)
-- Listar todas las tareas
-- Filtrar por estado (pendiente, completada)
-- Marcar tarea como completada
-
-## Stack Técnico
-- Backend: Python + FastAPI
-- Database: PostgreSQL
-- Testing: pytest
-EOF
-
-# 4. Iniciar OpenCode
+# Iniciar OpenCode
 opencode
 
-# 5. En OpenCode, ejecutar:
-# "Genera la especificación completa para la API REST de tareas"
-# "Crea el plan de implementación"
-# "Implementa el backend de la API"
+# Usar comandos naturales
+> "Crea una API REST con FastAPI para gestión de tareas"
+> "Agrega tests unitarios con pytest"
+> "Documenta el código con docstrings"
 ```
 
-### Brownfield: Continuar Proyecto Existente
+### Opción 3: Desarrollo con Claude Code
 
 ```bash
-# 1. Ya clonaste el repo con init-brownfield.sh
+# Dentro del contenedor dev
+cd /workspace
 
-# 2. Revisar contexto generado
-cat .local/brownfield/mi-proyecto_context.md
+# Iniciar Claude Code
+claude
 
-# 3. Entrar al contenedor dev
-docker compose exec dev bash
-
-# 4. Analizar código existente
-python scripts/utils/context-analyzer.py .local/brownfield/mi-proyecto
-
-# 5. Iniciar OpenCode con contexto
-opencode
-
-# 6. En OpenCode:
-# "Analiza el código existente y genera un resumen"
-# "Identifica áreas de mejora"
-# "Propón una nueva feature basada en el contexto"
+# Usar comandos naturales
+> "Analiza este código y sugiere mejoras"
+> "Refactoriza esta función para mejor legibilidad"
+> "Genera documentación completa"
 ```
 
-## Uso de HITL Checkpoints
-
-Los checkpoints HITL permiten aprobación manual en puntos críticos:
+### Opción 4: Desarrollo con Ollama (Local)
 
 ```bash
-# Listar checkpoints pendientes
-python src/skills/hitl_checkpoint.py list
+# Configurar Ollama
+./scripts/05_setup-ollama.sh
 
-# Aprobar un checkpoint
-python src/skills/hitl_checkpoint.py approve <checkpoint-id> <tu-nombre>
+# Usar modelo local
+ollama run llama3.2
 
-# Rechazar un checkpoint
-python src/skills/hitl_checkpoint.py reject <checkpoint-id> <tu-nombre> "Razón del rechazo"
+# O usar el cliente Python
+python3 << 'PYTHON'
+from src.utils.ollama_client import get_llm_router
+
+router = get_llm_router()
+response = router.generate("Explica qué es Spec-Driven Development")
+print(response)
+PYTHON
 ```
 
-## Consultar Auditoría
+## Workflows Visuales con cc-wf-studio
+
+### 1. Instalar Extension en VS Code
 
 ```bash
+# La extensión se sugiere automáticamente al abrir el proyecto
+# O instalar manualmente desde VS Code Marketplace
+```
+
+### 2. Abrir Workflow de Ejemplo
+
+```bash
+# Desde VS Code
+code .claude/workflows/spec-generation.json
+```
+
+### 3. Editar Workflow Visualmente
+
+- Drag & drop de nodos
+- Configurar SubAgents
+- Agregar conditional branching
+- Exportar a `.claude` format
+
+## Sistema HITL (Human-in-the-Loop)
+
+### Ver Checkpoints Pendientes
+
+```bash
+docker compose exec dev python src/skills/hitl_checkpoint.py list
+```
+
+### Aprobar Checkpoint
+
+```bash
+docker compose exec dev python src/skills/hitl_checkpoint.py approve <checkpoint_id>
+```
+
+### Rechazar Checkpoint
+
+```bash
+docker compose exec dev python src/skills/hitl_checkpoint.py reject <checkpoint_id> --reason "Motivo del rechazo"
+```
+
+## Sistema de Auditoría
+
+### Ver Logs Recientes
+
+```bash
+docker compose exec dev python src/audit/logger.py --show-recent
+```
+
+### Consultar en PostgreSQL
+
+```bash
+docker compose exec postgres psql -U sdd -d sdd_db
+
 # Ver últimas decisiones
-python src/audit/logger.py recent
+SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 10;
 
-# Ver decisiones de un agente específico
-python src/audit/logger.py by-agent spec_agent
-
-# Ver estadísticas
-python src/audit/logger.py stats
-
-# Generar reporte
-python src/audit/logger.py report
+# Ver checkpoints pendientes
+SELECT * FROM hitl_checkpoints WHERE status = 'pending';
 ```
 
 ## Comandos Útiles
 
-### Docker Compose
+### Gestión de Servicios
 
 ```bash
-# Ver logs
+# Ver logs en tiempo real
 docker compose logs -f dev
 
-# Reiniciar servicios
-docker compose restart
+# Reiniciar servicio específico
+docker compose restart dev
 
-# Detener todo
+# Parar todos los servicios
 docker compose down
 
-# Detener y limpiar volúmenes
+# Parar y eliminar volúmenes (⚠️ borra datos)
 docker compose down -v
 ```
 
-### Base de Datos
+### Debugging
 
 ```bash
-# Acceder a PostgreSQL
-docker compose exec postgres psql -U sdd -d sdd
+# Ver logs de PostgreSQL
+docker compose logs postgres
 
-# Ver tablas
-docker compose exec postgres psql -U sdd -d sdd -c "\dt"
+# Ver logs de Ollama
+docker compose logs ollama
 
-# Consultar audit log
-docker compose exec postgres psql -U sdd -d sdd -c "SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 10;"
+# Acceder a Adminer (UI de PostgreSQL)
+# Abrir en navegador: http://localhost:8080
+# Server: postgres
+# Username: sdd
+# Password: (ver .env)
+# Database: sdd_db
 ```
 
-### Adminer (UI de Base de Datos)
+### Desarrollo
 
-Abre en tu navegador: http://localhost:8080
+```bash
+# Ejecutar tests
+docker compose exec dev pytest
 
-- **Sistema**: PostgreSQL
-- **Servidor**: postgres
-- **Usuario**: sdd
-- **Contraseña**: sdd_password
-- **Base de datos**: sdd
+# Formatear código
+docker compose exec dev black src/
 
-## Estructura de Archivos
+# Linter
+docker compose exec dev flake8 src/
 
+# Type checking
+docker compose exec dev mypy src/
 ```
-mi-proyecto/
-├── .claude/              # Agentes y workflows de Claude
-│   ├── agents/          # Definiciones de agentes
-│   ├── commands/        # Comandos disponibles
-│   └── workflows/       # Workflows predefinidos
-├── .specify/            # Especificaciones y planes
-│   ├── speckit.plan    # Plan general
-│   ├── speckit.tasks   # Tareas
-│   └── specs/          # Especificaciones detalladas
-├── src/                 # Código fuente
-│   ├── agents/         # Implementación de agentes
-│   ├── skills/         # Agent skills
-│   ├── audit/          # Sistema de auditoría
-│   └── utils/          # Utilidades
-├── scripts/             # Scripts de inicialización
-├── docs/                # Documentación
-└── docker-compose.yml   # Configuración de servicios
+
+## Troubleshooting
+
+### "specify: command not found"
+
+```bash
+# Entrar al contenedor
+docker compose exec dev bash
+
+# Reinstalar Specify
+uv tool install git+https://github.com/github/spec-kit.git
+
+# Verificar
+specify --version
+```
+
+### "uv: command not found"
+
+```bash
+# Reinstalar uv como root
+docker compose exec -u root dev bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+mv /root/.local/bin/uv /usr/local/bin/uv
+chmod +x /usr/local/bin/uv
+```
+
+### Servicios no inician
+
+```bash
+# Verificar logs
+docker compose logs
+
+# Rebuild completo
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+### Problemas con Ollama
+
+```bash
+# Verificar que Ollama está corriendo
+docker compose ps ollama
+
+# Ver logs
+docker compose logs ollama
+
+# Reinstalar modelos
+docker compose exec ollama ollama pull llama3.2
 ```
 
 ## Próximos Pasos
 
-1. **Leer documentación completa**:
-   - [GREENFIELD.md](GREENFIELD.md) - Guía detallada para proyectos desde cero
-   - [BROWNFIELD.md](BROWNFIELD.md) - Guía detallada para proyectos existentes
-   - [HITL-GUIDE.md](HITL-GUIDE.md) - Guía de checkpoints HITL
-   - [AUDIT-GUIDE.md](AUDIT-GUIDE.md) - Guía de auditoría
-   - [AGENT-SKILLS.md](AGENT-SKILLS.md) - Documentación de agent skills
+1. **Leer documentación completa**: [README.md](../README.md)
+2. **Aprender sobre HITL**: [HITL-GUIDE.md](HITL-GUIDE.md)
+3. **Explorar workflows visuales**: [CC-WF-STUDIO-GUIDE.md](CC-WF-STUDIO-GUIDE.md)
+4. **Configurar Ollama**: [OLLAMA-GUIDE.md](OLLAMA-GUIDE.md)
+5. **Mejores prácticas**: [BEST-PRACTICES.md](BEST-PRACTICES.md)
 
-2. **Explorar agentes**:
-   - Revisar `.claude/agents/` para entender cada agente
-   - Personalizar workflows en `.claude/workflows/`
+## Recursos Adicionales
 
-3. **Configurar notificaciones**:
-   - Slack webhooks para checkpoints HITL
-   - Email para alertas críticas
-
-4. **Integrar con CI/CD**:
-   - GitHub Actions para testing automático
-   - Deployment automático
-
-## Solución de Problemas
-
-### PostgreSQL no inicia
-
-```bash
-# Ver logs
-docker compose logs postgres
-
-# Limpiar volúmenes y reiniciar
-docker compose down -v
-docker compose up -d postgres
-```
-
-### Dev container no puede conectar a PostgreSQL
-
-```bash
-# Verificar que postgres esté healthy
-docker compose ps
-
-# Verificar variable DATABASE_URL
-docker compose exec dev env | grep DATABASE_URL
-
-# Probar conexión manual
-docker compose exec dev python -c "import psycopg; psycopg.connect('postgresql://sdd:sdd_password@postgres:5432/sdd')"
-```
-
-### Herramientas CLI no encontradas
-
-```bash
-# Rebuild del contenedor dev
-docker compose build --no-cache dev
-docker compose up -d dev
-```
-
-## Soporte
-
-- **Documentación**: Ver carpeta `docs/`
-- **Issues**: https://github.com/vtomasv/sdd-dev-template/issues
-- **Discusiones**: https://github.com/vtomasv/sdd-dev-template/discussions
-
-## Referencias
-
-- [Humanlayer](https://www.humanlayer.dev/)
+- [Spec Kit Documentation](https://github.com/github/spec-kit)
+- [cc-wf-studio GitHub](https://github.com/breaking-brake/cc-wf-studio)
+- [Ollama Models](https://ollama.ai/library)
+- [Humanlayer Best Practices](https://www.humanlayer.dev/)
 - [12-Factor Agents](https://github.com/humanlayer/12-factor-agents)
-- [ACE-FCA](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)
-- [Google Antigravity](https://cloud.google.com/antigravity)
-- [Spec Kit](https://github.com/github/spec-kit)
+
+---
+
+**¿Problemas?** Abre un [issue](https://github.com/vtomasv/sdd-dev-template/issues)
