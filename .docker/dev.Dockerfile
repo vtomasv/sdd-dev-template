@@ -21,6 +21,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
   && ln -s /root/.local/bin/uv /usr/local/bin/uv
 
+# --- Install global npm packages as root (before switching to dev user) ---
+RUN npm install -g opencode-ai @google/gemini-cli @anthropic-ai/claude-code
+
 # --- Create non-root user ---
 RUN useradd -m -s /bin/bash dev \
   && mkdir -p /workspace \
@@ -31,15 +34,6 @@ WORKDIR /workspace
 
 # --- Install Spec Kit: Specify CLI ---
 RUN uv tool install specify-cli || echo "Specify CLI install skipped (repo may not be public yet)"
-
-# --- Install OpenCode ---
-RUN npm install -g opencode-ai
-
-# --- Install Gemini CLI ---
-RUN npm install -g @google/gemini-cli
-
-# --- Install Claude Code CLI (npm) ---
-RUN npm install -g @anthropic-ai/claude-code
 
 # --- Python dependencies for agent skills ---
 RUN pip install --user --no-cache-dir \
