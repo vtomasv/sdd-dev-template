@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Kanban Web</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>📋 Mini Kanban</h1>
+        <p class="subtitle">Gestiona tus tareas de forma visual</p>
+    </header>
+
+    <main class="kanban-board">
+        <!-- Columna TODO -->
+        <section class="column" data-status="todo">
+            <div class="column-header">
+                <h2>📝 Todo</h2>
+                <span class="task-count" id="count-todo">0</span>
+            </div>
+            <div class="task-list" id="todo" 
+                 ondrop="drop(event)" 
+                 ondragover="allowDrop(event)">
+            </div>
+            <div class="add-task-container">
+                <input type="text" 
+                       id="new-task-todo" 
+                       placeholder="Nueva tarea..."
+                       onkeypress="handleKeyPress(event, 'todo')">
+                <button onclick="addTask('todo')">+ Agregar</button>
+            </div>
+        </section>
+
+        <!-- Columna IN PROGRESS -->
+        <section class="column" data-status="inprogress">
+            <div class="column-header">
+                <h2>🔄 In Progress</h2>
+                <span class="task-count" id="count-inprogress">0</span>
+            </div>
+            <div class="task-list" id="inprogress" 
+                 ondrop="drop(event)" 
+                 ondragover="allowDrop(event)">
+            </div>
+        </section>
+
+        <!-- Columna DONE -->
+        <section class="column" data-status="done">
+            <div class="column-header">
+                <h2>✅ Done</h2>
+                <span class="task-count" id="count-done">0</span>
+            </div>
+            <div class="task-list" id="done" 
+                 ondrop="drop(event)" 
+                 ondragover="allowDrop(event)">
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Mini Kanban Web - Creado con SDD Template</p>
+        <p class="storage-info">💾 Datos guardados localmente</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
