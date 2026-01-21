@@ -17,9 +17,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # pnpm via corepack
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# --- uv (Python tooling) ---
+# --- uv (Python tooling) - INSTALL AS ROOT FIRST ---
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
-  && ln -s /root/.local/bin/uv /usr/local/bin/uv
+  && mv /root/.local/bin/uv /usr/local/bin/uv \
+  && chmod +x /usr/local/bin/uv
 
 # --- Install global npm packages as root (before switching to dev user) ---
 RUN npm install -g opencode-ai @google/gemini-cli @anthropic-ai/claude-code
@@ -32,8 +33,8 @@ RUN useradd -m -s /bin/bash dev \
 USER dev
 WORKDIR /workspace
 
-# --- Install Spec Kit: Specify CLI ---
-RUN uv tool install specify-cli || echo "Specify CLI install skipped (repo may not be public yet)"
+# --- Install Specify CLI using uv tool from GitHub ---
+RUN uv tool install git+https://github.com/github/spec-kit.git
 
 # --- Python dependencies for agent skills ---
 RUN pip install --user --no-cache-dir \
@@ -57,7 +58,7 @@ RUN pip install --user --no-cache-dir \
     typer \
     loguru
 
-# Convenience
+# Convenience - Add uv tool bin to PATH
 ENV PATH="/home/dev/.local/bin:${PATH}"
 
 # Bash prompt customization
@@ -65,4 +66,4 @@ RUN echo 'export PS1="\[\033[01;32m\]sdd-dev\[\033[00m\]:\[\033[01;34m\]\w\[\033
 
 # Welcome message
 RUN echo 'echo "🚀 SDD Development Environment Ready!"' >> /home/dev/.bashrc
-RUN echo 'echo "📚 Run: specify --version | opencode --version | claude --version"' >> /home/dev/.bashrc
+RUN echo 'echo "📚 Tools: specify | opencode | claude | gemini | ollama"' >> /home/dev/.bashrc
