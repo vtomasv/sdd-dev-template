@@ -36,14 +36,24 @@ echo -e "${GREEN}🔑 Session ID: ${SESSION_ID}${NC}"
 
 # Actualizar .env con session ID
 if grep -q "^SESSION_ID=" .env; then
-    sed -i "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    # Compatibilidad macOS/Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    else
+        sed -i "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    fi
 else
     echo "SESSION_ID=${SESSION_ID}" >> .env
 fi
 
 # Actualizar PROJECT_TYPE
 if grep -q "^PROJECT_TYPE=" .env; then
-    sed -i "s/^PROJECT_TYPE=.*/PROJECT_TYPE=greenfield/" .env
+    # Compatibilidad macOS/Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/^PROJECT_TYPE=.*/PROJECT_TYPE=greenfield/" .env
+    else
+        sed -i "s/^PROJECT_TYPE=.*/PROJECT_TYPE=greenfield/" .env
+    fi
 else
     echo "PROJECT_TYPE=greenfield" >> .env
 fi

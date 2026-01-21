@@ -49,26 +49,42 @@ echo -e "${GREEN}🔑 Session ID: ${SESSION_ID}${NC}"
 
 # Actualizar .env con session ID y repo URL
 if grep -q "^SESSION_ID=" .env; then
-    sed -i "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    else
+        sed -i "s/^SESSION_ID=.*/SESSION_ID=${SESSION_ID}/" .env
+    fi
 else
     echo "SESSION_ID=${SESSION_ID}" >> .env
 fi
 
 if grep -q "^PROJECT_TYPE=" .env; then
-    sed -i "s/^PROJECT_TYPE=.*/PROJECT_TYPE=brownfield/" .env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/^PROJECT_TYPE=.*/PROJECT_TYPE=brownfield/" .env
+    else
+        sed -i "s/^PROJECT_TYPE=.*/PROJECT_TYPE=brownfield/" .env
+    fi
 else
     echo "PROJECT_TYPE=brownfield" >> .env
 fi
 
 if grep -q "^REPO_URL=" .env; then
-    sed -i "s|^REPO_URL=.*|REPO_URL=${REPO_URL}|" .env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s|^REPO_URL=.*|REPO_URL=${REPO_URL}|" .env
+    else
+        sed -i "s|^REPO_URL=.*|REPO_URL=${REPO_URL}|" .env
+    fi
 else
     echo "REPO_URL=${REPO_URL}" >> .env
 fi
 
 if [ -n "$CONTEXT_FILE" ]; then
     if grep -q "^CONTEXT_FILE=" .env; then
-        sed -i "s|^CONTEXT_FILE=.*|CONTEXT_FILE=${CONTEXT_FILE}|" .env
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s|^CONTEXT_FILE=.*|CONTEXT_FILE=${CONTEXT_FILE}|" .env
+        else
+            sed -i "s|^CONTEXT_FILE=.*|CONTEXT_FILE=${CONTEXT_FILE}|" .env
+        fi
     else
         echo "CONTEXT_FILE=${CONTEXT_FILE}" >> .env
     fi
